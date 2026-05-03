@@ -208,12 +208,15 @@ void procesarInput(GLFWwindow* ventana, float dt) {
     }
 
     // Cambio de marchas manual
-    if (glfwGetKey(ventana, GLFW_KEY_1) == GLFW_PRESS) miCoche.marcha = 1;
-    if (glfwGetKey(ventana, GLFW_KEY_2) == GLFW_PRESS) miCoche.marcha = 2;
-    if (glfwGetKey(ventana, GLFW_KEY_3) == GLFW_PRESS) miCoche.marcha = 3;
-    if (glfwGetKey(ventana, GLFW_KEY_4) == GLFW_PRESS) miCoche.marcha = 4;
-    if (glfwGetKey(ventana, GLFW_KEY_5) == GLFW_PRESS) miCoche.marcha = 5;
-    if (glfwGetKey(ventana, GLFW_KEY_6) == GLFW_PRESS) miCoche.marcha = 6;
+    static bool upPulsadoAntes = false;
+    bool upPulsado = glfwGetKey(ventana, GLFW_KEY_UP) == GLFW_PRESS;
+    if (upPulsado && !upPulsadoAntes && miCoche.marcha < 6) miCoche.marcha++;
+    upPulsadoAntes = upPulsado;
+
+    static bool downPulsadoAntes = false;
+    bool downPulsado = glfwGetKey(ventana, GLFW_KEY_DOWN) == GLFW_PRESS;
+    if (downPulsado && !downPulsadoAntes && miCoche.marcha > 1) miCoche.marcha--;
+    downPulsadoAntes = downPulsado;
 
     // Volante
     bool giroIzq = glfwGetKey(ventana, GLFW_KEY_A) == GLFW_PRESS;
@@ -247,9 +250,9 @@ void procesarInput(GLFWwindow* ventana, float dt) {
     tPulsadoAntes = tPulsado;
 
     // Control de cámaras
-    if (glfwGetKey(ventana, GLFW_KEY_7) == GLFW_PRESS) vistaSeleccionada = 1;
-    if (glfwGetKey(ventana, GLFW_KEY_8) == GLFW_PRESS) vistaSeleccionada = 2;
-    if (glfwGetKey(ventana, GLFW_KEY_9) == GLFW_PRESS) vistaSeleccionada = 3;
+    if (glfwGetKey(ventana, GLFW_KEY_1) == GLFW_PRESS) vistaSeleccionada = 1;
+    if (glfwGetKey(ventana, GLFW_KEY_2) == GLFW_PRESS) vistaSeleccionada = 2;
+    if (glfwGetKey(ventana, GLFW_KEY_3) == GLFW_PRESS) vistaSeleccionada = 3;
 }
 
 void actualizarFisicas(float dt) {
