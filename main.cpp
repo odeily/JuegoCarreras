@@ -24,7 +24,7 @@ void ajuste_ventana(GLFWwindow* ventana, int ancho, int alto) {
 
 // --- ESTRUCTURAS DE ESTADO ---
 struct Coche {
-    float posX = 150.0f, posY = 0.5f, posZ = -sin(150.0f * 0.05f) * 20.0f; 
+    float posX = 150.0f, posY = 0.5f, posZ = 0.0f; 
     float anguloChasis = 0.0f;
     float velocidad = 0.0f;
     float giroVolante = 0.0f;
@@ -63,12 +63,10 @@ unsigned int texMetal, texCristal, texRueda, texHierba, texAsfalto, texCieloDia,
 float limitesMarchas[6] = { 10.0f, 20.0f, 30.0f, 40.0f, 50.0f, 60.0f };
 
 // --- FUNCIONES MATEMATICAS ---
-float getDistanciaOval(float x, float z) {
-    // Dividimos X entre 1.6 para estirarlo horizontalmente
-    float ovalX = x / 1.6f;
-    // Añadimos una onda sinusoidal a Z para crear chicanes y curvas complejas
-    float waveZ = z + sin(x * 0.05f) * 20.0f;
-    return sqrt(ovalX * ovalX + waveZ * waveZ);
+float getDistanciaElipse(float x, float z) {
+    // Elipse pura: semi-eje mayor en X (factor 1.6), semi-eje menor en Z
+    float ex = x / 1.6f;
+    return sqrt(ex * ex + z * z);
 }
 
 // --- FUNCIONES GRAFICAS ---
@@ -97,19 +95,18 @@ unsigned int cargarTextura(const char* ruta) {
 
 void inicializarObstaculos() {
     obstaculos.clear();
-    // Crear muros contiguos alrededor de todo el circuito sinuoso
-    // Ampliamos el radio virtual de los muros para dejar una zona amplia de hierba
+    // Crear muros contiguos alrededor de la elipse
     for (float angle = 0; angle < 360; angle += 1.0f) { 
         float rad = glm::radians(angle);
         
-        // Muro exterior (radio 140 virtual)
+        // Muro exterior (radio virtual 140 sobre la elipse)
         float ext_x = (140.0f * cos(rad)) * 1.6f;
-        float ext_z = 140.0f * sin(rad) - sin(ext_x * 0.05f) * 20.0f;
+        float ext_z = 140.0f * sin(rad);
         obstaculos.push_back({ext_x, ext_z, 2.0f});
         
-        // Muro interior (radio 60 virtual)
+        // Muro interior (radio virtual 60 sobre la elipse)
         float int_x = (60.0f * cos(rad)) * 1.6f;
-        float int_z = 60.0f * sin(rad) - sin(int_x * 0.05f) * 20.0f;
+        float int_z = 60.0f * sin(rad);
         obstaculos.push_back({int_x, int_z, 2.0f});
     }
 }
@@ -117,7 +114,7 @@ void inicializarObstaculos() {
 void reiniciarJuego() {
     miCoche.posX = 150.0f;
     miCoche.posY = 0.5f;
-    miCoche.posZ = -sin(150.0f * 0.05f) * 20.0f;
+    miCoche.posZ = 0.0f;
     miCoche.anguloChasis = 0.0f; 
     miCoche.velocidad = 0.0f;
     miCoche.giroVolante = 0.0f;
@@ -143,9 +140,9 @@ void procesarInput(GLFWwindow* ventana, float dt) {
 
     miCoche.frenando = false;
 
-    // Distancia al centro usando fórmula del óvalo para saber si estamos en asfalto
-    float distOval = getDistanciaOval(miCoche.posX, miCoche.posZ);
-    bool fueraDePista = (distOval < 80.0f || distOval > 120.0f);
+    // Distancia al centro usando fórmula de la elipse para saber si estamos en asfalto
+    float distElipse = getDistanciaElipse(miCoche.posX, miCoche.posZ);
+    bool fueraDePista = (distElipse < 80.0f || distElipse > 120.0f);
     
     float velocidadMaxPermitida = limitesMarchas[miCoche.marcha - 1];
     
@@ -293,8 +290,8 @@ void actualizarFisicas(float dt) {
 
     // Deteccion de Meta 
     // Usamos Z puramente mundial para que la franja sea perfectamente recta horizontal
-    float distOval = getDistanciaOval(miCoche.posX, miCoche.posZ);
-    bool cruzandoMetaAhora = (distOval >= 80.0f && distOval <= 120.0f && miCoche.posX > 130.0f && miCoche.posZ >= -23.0f && miCoche.posZ <= -15.0f);
+    float distElipse = getDistanciaElipse(miCoche.posX, miCoche.posZ);
+    bool cruzandoMetaAhora = (distElipse >= 80.0f && distElipse <= 120.0f && miCoche.posX > 130.0f && miCoche.posZ >= -5.0f && miCoche.posZ <= 5.0f);
     
     if (cruzandoMetaAhora && !miCoche.cruzandoMetaAnterior) {
         // Para evitar bugs si va marcha atras, comprobamos que avanza en Z virtual (relativo a la curva)
@@ -387,11 +384,11 @@ void dibujarEntorno(unsigned int shader) {
         for (int z = -65; z <= 65; z++) {
             float worldX = x * 3.0f;
             float worldZ = z * 3.0f;
-            float distOval = getDistanciaOval(worldX, worldZ);
+            float distElipse = getDistanciaElipse(worldX, worldZ);
             
-            bool esPista = (distOval >= 80.0f && distOval <= 120.0f);
-            // Dibujar la meta perfectamente recta basándose puramente en Z
-            bool esMeta = (esPista && worldX > 130.0f && worldZ >= -23.0f && worldZ <= -15.0f);
+            bool esPista = (distElipse >= 80.0f && distElipse <= 120.0f);
+            // Meta en la zona derecha de la elipse
+            bool esMeta = (esPista && worldX > 130.0f && worldZ >= -5.0f && worldZ <= 5.0f);
             
             unsigned int texSueloActual = esPista ? texAsfalto : texHierba;
             if (esMeta) texSueloActual = texMeta;
